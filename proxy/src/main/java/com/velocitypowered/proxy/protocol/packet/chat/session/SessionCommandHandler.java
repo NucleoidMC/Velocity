@@ -42,7 +42,17 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
     return SessionPlayerCommand.class;
   }
 
+  @Nullable
   private MinecraftPacket consumeCommand(SessionPlayerCommand packet) {
+    if (packet.isSigned()) {
+      logger.fatal("A plugin tried to deny a command with signable component(s). "
+          + "This is not supported. "
+          + "Disconnecting player " + player.getUsername() + ". Command packet: " + packet);
+      player.disconnect(Component.text(
+          "A proxy plugin caused an illegal protocol state. "
+              + "Contact your network administrator."));
+      return null;
+    }
     return new ChatAcknowledgement(packet.lastSeenMessages.getOffset());
   }
 
@@ -75,14 +85,6 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
     queueCommandResult(this.server, this.player, event -> {
       CommandExecuteEvent.CommandResult result = event.getResult();
       if (result == CommandExecuteEvent.CommandResult.denied()) {
-        if (packet.isSigned()) {
-          logger.fatal("A plugin tried to deny a command with signable component(s). "
-              + "This is not supported. "
-              + "Disconnecting player " + player.getUsername() + ". Command packet: " + packet);
-          player.disconnect(Component.text(
-              "A proxy plugin caused an illegal protocol state. "
-                  + "Contact your network administrator."));
-        }
         return CompletableFuture.completedFuture(consumeCommand(packet));
       }
 
