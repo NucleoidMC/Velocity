@@ -55,10 +55,7 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
                   + "Contact your network administrator."));
         }
         // We seemingly can't actually do this if signed args exist, if not, we can probs keep stuff happy
-        if (player.getProtocolVersion().compareTo(ProtocolVersion.MINECRAFT_1_19_3) >= 0) {
-          return CompletableFuture.completedFuture(new ChatAcknowledgement(packet.lastSeenMessages.getOffset()));
-        }
-        return CompletableFuture.completedFuture(null);
+        return CompletableFuture.completedFuture(new ChatAcknowledgement(packet.lastSeenMessages.getOffset()));
       }
 
       String commandToRun = result.getCommand().orElse(packet.command);
@@ -110,10 +107,7 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
                 .toServer();
           }
         }
-        if (player.getProtocolVersion().compareTo(ProtocolVersion.MINECRAFT_1_19_3) >= 0) {
-          return new ChatAcknowledgement(packet.lastSeenMessages.getOffset());
-        }
-        return null;
+        return new ChatAcknowledgement(packet.lastSeenMessages.getOffset());
       });
     }, packet.command, packet.timeStamp, packet.lastSeenMessages);
   }
