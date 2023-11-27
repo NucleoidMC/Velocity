@@ -78,7 +78,8 @@ public class SessionChatHandler implements ChatHandler<SessionPlayerChat> {
               logger.error("Exception while handling player chat for {}", player, ex);
               return null;
             }),
-        packet.getTimestamp()
+        packet.getTimestamp(),
+        packet.getLastSeenMessages()
     );
   }
 }

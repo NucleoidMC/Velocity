@@ -95,7 +95,8 @@ public class KeyedChatHandler implements
           logger.error("Exception while handling player chat for {}", player, ex);
           return null;
         }),
-        packet.getExpiry()
+        packet.getExpiry(),
+        null
     );
   }
 

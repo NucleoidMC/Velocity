@@ -62,6 +62,6 @@ public class LegacyCommandHandler implements CommandHandler<LegacyChat> {
         }
         return null;
       });
-    }, command, Instant.now());
+    }, command, Instant.now(), null);
   }
 }

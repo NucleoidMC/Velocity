@@ -22,6 +22,7 @@ import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import javax.annotation.Nullable;
 import java.time.Instant;
+import java.util.BitSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -64,15 +65,16 @@ public class ChatQueue {
    * packets. This maintains order on the server-level for the client insertions of commands
    * and messages. All entries are locked through an internal object lock.
    *
-   * @param nextPacket the {@link CompletableFuture} which will provide the next-processed packet.
-   * @param timestamp  the new {@link Instant} timestamp of this packet to update the internal chat state.
+   * @param nextPacket       the {@link CompletableFuture} which will provide the next-processed packet.
+   * @param timestamp        the new {@link Instant} timestamp of this packet to update the internal chat state.
+   * @param lastSeenMessages the new {@link LastSeenMessages} last seen messages to update the internal chat state.
    */
-  public void queuePacket(CompletableFuture<MinecraftPacket> nextPacket, @Nullable Instant timestamp) {
+  public void queuePacket(CompletableFuture<MinecraftPacket> nextPacket, @Nullable Instant timestamp, @Nullable LastSeenMessages lastSeenMessages) {
     queueTask((chatState, smc) -> nextPacket.handleAsync((packet, throwable) -> {
       if (packet != null && !smc.isClosed()) {
         smc.write(packet);
       }
-      return chatState.update(timestamp);
+      return chatState.update(timestamp, lastSeenMessages);
     }, smc.eventLoop()));
   }
 
@@ -104,19 +106,28 @@ public class ChatQueue {
   }
 
   public static class ChatState {
-    private static final ChatState INITIAL = new ChatState(Instant.EPOCH);
+    private static final ChatState INITIAL = new ChatState(Instant.EPOCH, new BitSet());
 
     public final Instant lastTimestamp;
+    private final BitSet lastSeenMessages;
 
-    private ChatState(Instant lastTimestamp) {
+    private ChatState(Instant lastTimestamp, BitSet lastSeenMessages) {
       this.lastTimestamp = lastTimestamp;
+      this.lastSeenMessages = lastSeenMessages;
     }
 
-    public ChatState update(@Nullable Instant timestamp) {
-      if (timestamp == null) {
+    public ChatState update(@Nullable Instant timestamp, @Nullable LastSeenMessages lastSeenMessages) {
+      if (timestamp == null && lastSeenMessages == null) {
         return this;
       }
-      return new ChatState(timestamp);
+      return new ChatState(
+          timestamp != null ? timestamp : this.lastTimestamp,
+          lastSeenMessages != null ? lastSeenMessages.getAcknowledged() : this.lastSeenMessages
+      );
+    }
+
+    public LastSeenMessages createLastSeen() {
+      return new LastSeenMessages(lastSeenMessages);
     }
   }
 }

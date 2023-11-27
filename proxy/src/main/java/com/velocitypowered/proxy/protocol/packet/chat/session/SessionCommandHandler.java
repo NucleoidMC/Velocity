@@ -113,6 +113,6 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
         }
         return null;
       });
-    }, packet.command, packet.timeStamp);
+    }, packet.command, packet.timeStamp, packet.lastSeenMessages);
   }
 }
