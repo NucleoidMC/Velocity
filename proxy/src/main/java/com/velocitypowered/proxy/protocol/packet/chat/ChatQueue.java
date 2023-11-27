@@ -95,6 +95,10 @@ public class ChatQueue {
     });
   }
 
+  public void queuePacket(MinecraftPacket packet) {
+    queuePacket(chatState -> packet);
+  }
+
   private interface Task {
     CompletableFuture<ChatState> update(ChatState chatState, MinecraftConnection smc);
   }
