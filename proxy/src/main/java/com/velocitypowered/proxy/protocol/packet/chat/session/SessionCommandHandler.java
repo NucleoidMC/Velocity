@@ -18,11 +18,12 @@
 package com.velocitypowered.proxy.protocol.packet.chat.session;
 
 import com.velocitypowered.api.event.command.CommandExecuteEvent;
-import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.proxy.VelocityServer;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
+import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import com.velocitypowered.proxy.protocol.packet.chat.ChatAcknowledgement;
 import com.velocitypowered.proxy.protocol.packet.chat.CommandHandler;
+import javax.annotation.Nullable;
 import java.util.concurrent.CompletableFuture;
 import net.kyori.adventure.text.Component;
 
@@ -41,6 +42,34 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
     return SessionPlayerCommand.class;
   }
 
+  private MinecraftPacket consumeCommand(SessionPlayerCommand packet) {
+    return new ChatAcknowledgement(packet.lastSeenMessages.getOffset());
+  }
+
+  @Nullable
+  private MinecraftPacket modifyCommand(SessionPlayerCommand packet, String newCommand) {
+    if (packet.isSigned() && newCommand.equals(packet.command)) {
+      return packet;
+    }
+    if (packet.isSigned()) {
+      logger.fatal("A plugin tried to change a command with signed component(s). "
+          + "This is not supported. "
+          + "Disconnecting player " + player.getUsername() + ". Command packet: " + packet);
+      player.disconnect(Component.text(
+          "A proxy plugin caused an illegal protocol state. "
+              + "Contact your network administrator."));
+      return null;
+    }
+
+    return this.player.getChatBuilderFactory()
+        .builder()
+        .setTimestamp(packet.timeStamp)
+        .setLastSeenMessages(packet.lastSeenMessages)
+        .asPlayer(this.player)
+        .message("/" + newCommand)
+        .toServer();
+  }
+
   @Override
   public void handlePlayerCommandInternal(SessionPlayerCommand packet) {
     queueCommandResult(this.server, this.player, event -> {
@@ -54,60 +83,19 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
               "A proxy plugin caused an illegal protocol state. "
                   + "Contact your network administrator."));
         }
-        // We seemingly can't actually do this if signed args exist, if not, we can probs keep stuff happy
-        return CompletableFuture.completedFuture(new ChatAcknowledgement(packet.lastSeenMessages.getOffset()));
+        return CompletableFuture.completedFuture(consumeCommand(packet));
       }
 
       String commandToRun = result.getCommand().orElse(packet.command);
       if (result.isForwardToServer()) {
-        if (packet.isSigned() && commandToRun.equals(packet.command)) {
-          return CompletableFuture.completedFuture(packet);
-        } else {
-          if (packet.isSigned()) {
-            logger.fatal("A plugin tried to change a command with signed component(s). "
-                + "This is not supported. "
-                + "Disconnecting player " + player.getUsername() + ". Command packet: " + packet);
-            player.disconnect(Component.text(
-                "A proxy plugin caused an illegal protocol state. "
-                    + "Contact your network administrator."));
-            return CompletableFuture.completedFuture(null);
-          }
-
-          return CompletableFuture.completedFuture(this.player.getChatBuilderFactory()
-              .builder()
-              .setTimestamp(packet.timeStamp)
-              .setLastSeenMessages(packet.lastSeenMessages)
-              .asPlayer(this.player)
-              .message("/" + commandToRun)
-              .toServer());
-        }
+        return CompletableFuture.completedFuture(modifyCommand(packet, commandToRun));
       }
 
       return runCommand(this.server, this.player, commandToRun, hasRun -> {
-        if (!hasRun) {
-          if (packet.isSigned() && commandToRun.equals(packet.command)) {
-            return packet;
-          } else {
-            if (packet.isSigned()) {
-              logger.fatal("A plugin tried to change a command with signed component(s). "
-                  + "This is not supported. "
-                  + "Disconnecting player " + player.getUsername() + ". Command packet: " + packet);
-              player.disconnect(Component.text(
-                  "A proxy plugin caused an illegal protocol state. "
-                      + "Contact your network administrator."));
-              return null;
-            }
-
-            return this.player.getChatBuilderFactory()
-                .builder()
-                .setTimestamp(packet.timeStamp)
-                .setLastSeenMessages(packet.lastSeenMessages)
-                .asPlayer(this.player)
-                .message("/" + commandToRun)
-                .toServer();
-          }
+        if (hasRun) {
+          return consumeCommand(packet);
         }
-        return new ChatAcknowledgement(packet.lastSeenMessages.getOffset());
+        return modifyCommand(packet, commandToRun);
       });
     }, packet.command, packet.timeStamp, packet.lastSeenMessages);
   }
