@@ -48,7 +48,7 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
 
   @Nullable
   private MinecraftPacket modifyCommand(SessionPlayerCommand packet, String newCommand) {
-    if (packet.isSigned() && newCommand.equals(packet.command)) {
+    if (newCommand.equals(packet.command)) {
       return packet;
     }
     if (packet.isSigned()) {
