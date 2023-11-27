@@ -53,7 +53,10 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
               + "Contact your network administrator."));
       return null;
     }
-    return new ChatAcknowledgement(packet.lastSeenMessages.getOffset());
+    if (!packet.lastSeenMessages.isEmpty()) {
+      return new ChatAcknowledgement(packet.lastSeenMessages.getOffset());
+    }
+    return null;
   }
 
   @Nullable

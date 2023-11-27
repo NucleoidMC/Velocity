@@ -52,7 +52,7 @@ public class LastSeenMessages {
   }
 
   public boolean isEmpty() {
-    return acknowledged.isEmpty();
+    return offset == 0;
   }
 
   public int getOffset() {
