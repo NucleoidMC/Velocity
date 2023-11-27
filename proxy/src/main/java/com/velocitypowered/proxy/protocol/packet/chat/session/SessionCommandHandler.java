@@ -79,6 +79,7 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
           return CompletableFuture.completedFuture(this.player.getChatBuilderFactory()
               .builder()
               .setTimestamp(packet.timeStamp)
+              .setLastSeenMessages(packet.lastSeenMessages)
               .asPlayer(this.player)
               .message("/" + commandToRun)
               .toServer());
@@ -103,6 +104,7 @@ public class SessionCommandHandler implements CommandHandler<SessionPlayerComman
             return this.player.getChatBuilderFactory()
                 .builder()
                 .setTimestamp(packet.timeStamp)
+                .setLastSeenMessages(packet.lastSeenMessages)
                 .asPlayer(this.player)
                 .message("/" + commandToRun)
                 .toServer();
