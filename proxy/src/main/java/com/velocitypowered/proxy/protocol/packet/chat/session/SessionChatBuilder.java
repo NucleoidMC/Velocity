@@ -41,13 +41,14 @@ public class SessionChatBuilder extends ChatBuilderV2 {
 
   @Override
   public MinecraftPacket toServer() {
+    LastSeenMessages lastSeenMessages = this.lastSeenMessages != null ? this.lastSeenMessages : new LastSeenMessages();
     if (message.startsWith("/")) {
       SessionPlayerCommand command = new SessionPlayerCommand();
       command.command = message.substring(1);
       command.salt = 0L;
       command.timeStamp = timestamp;
       command.argumentSignatures = new SessionPlayerCommand.ArgumentSignatures();
-      command.lastSeenMessages = new LastSeenMessages();
+      command.lastSeenMessages = lastSeenMessages;
       return command;
     } else {
       SessionPlayerChat chat = new SessionPlayerChat();
@@ -56,7 +57,7 @@ public class SessionChatBuilder extends ChatBuilderV2 {
       chat.signature = new byte[0];
       chat.timestamp = timestamp;
       chat.salt = 0L;
-      chat.lastSeenMessages = new LastSeenMessages();
+      chat.lastSeenMessages = lastSeenMessages;
       return chat;
     }
   }

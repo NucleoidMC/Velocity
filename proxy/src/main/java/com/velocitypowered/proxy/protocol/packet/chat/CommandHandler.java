@@ -29,6 +29,8 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import javax.annotation.Nullable;
+
 public interface CommandHandler<T extends MinecraftPacket> {
 
   Logger logger = LogManager.getLogger(CommandHandler.class);
@@ -54,7 +56,7 @@ public interface CommandHandler<T extends MinecraftPacket> {
 
   default void queueCommandResult(VelocityServer server, ConnectedPlayer player,
       Function<CommandExecuteEvent, CompletableFuture<MinecraftPacket>> futurePacketCreator,
-      String message, Instant timestamp) {
+      String message, Instant timestamp, @Nullable LastSeenMessages lastSeenMessages) {
     player.getChatQueue().queuePacket(
         server.getCommandManager().callCommandEvent(player, message)
             .thenComposeAsync(futurePacketCreator)
@@ -68,6 +70,6 @@ public interface CommandHandler<T extends MinecraftPacket> {
               player.sendMessage(
                   Component.translatable("velocity.command.generic-error", NamedTextColor.RED));
               return null;
-            }), timestamp);
+            }), timestamp, lastSeenMessages);
   }
 }

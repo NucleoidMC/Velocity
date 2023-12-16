@@ -69,6 +69,7 @@ import com.velocitypowered.proxy.protocol.packet.chat.ChatQueue;
 import com.velocitypowered.proxy.protocol.packet.chat.ChatType;
 import com.velocitypowered.proxy.protocol.packet.chat.ComponentHolder;
 import com.velocitypowered.proxy.protocol.packet.chat.builder.ChatBuilderFactory;
+import com.velocitypowered.proxy.protocol.packet.chat.builder.ChatBuilderV2;
 import com.velocitypowered.proxy.protocol.packet.chat.legacy.LegacyChat;
 import com.velocitypowered.proxy.protocol.packet.config.StartUpdate;
 import com.velocitypowered.proxy.protocol.packet.title.GenericTitlePacket;
@@ -942,11 +943,12 @@ public class ConnectedPlayer implements MinecraftConnectionAssociation, Player, 
         "input cannot be greater than " + LegacyChat.MAX_SERVERBOUND_MESSAGE_LENGTH
             + " characters in length");
     if (getProtocolVersion().compareTo(ProtocolVersion.MINECRAFT_1_19) >= 0) {
-      this.chatQueue.hijack(getChatBuilderFactory().builder().asPlayer(this).message(input),
-          (instant, item) -> {
-            item.setTimestamp(instant);
-            return item.toServer();
-          });
+      ChatBuilderV2 message = getChatBuilderFactory().builder().asPlayer(this).message(input);
+      this.chatQueue.queuePacket(chatState -> {
+        message.setTimestamp(chatState.lastTimestamp);
+        message.setLastSeenMessages(chatState.createLastSeen());
+        return message.toServer();
+      });
     } else {
       ensureBackendConnection().write(getChatBuilderFactory().builder()
           .asPlayer(this).message(input).toServer());

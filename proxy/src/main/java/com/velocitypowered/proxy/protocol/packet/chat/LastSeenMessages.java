@@ -33,6 +33,11 @@ public class LastSeenMessages {
     this.acknowledged = new BitSet();
   }
 
+  public LastSeenMessages(BitSet acknowledged) {
+    this.offset = 0;
+    this.acknowledged = acknowledged;
+  }
+
   public LastSeenMessages(ByteBuf buf) {
     this.offset = ProtocolUtils.readVarInt(buf);
 
@@ -47,11 +52,15 @@ public class LastSeenMessages {
   }
 
   public boolean isEmpty() {
-    return acknowledged.isEmpty();
+    return offset == 0;
   }
 
   public int getOffset() {
     return this.offset;
+  }
+
+  public BitSet getAcknowledged() {
+    return acknowledged;
   }
 
   @Override

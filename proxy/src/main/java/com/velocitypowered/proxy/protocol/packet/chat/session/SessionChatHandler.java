@@ -70,6 +70,7 @@ public class SessionChatHandler implements ChatHandler<SessionPlayerChat> {
                 }
                 return this.player.getChatBuilderFactory().builder().message(packet.message)
                     .setTimestamp(packet.timestamp)
+                    .setLastSeenMessages(packet.lastSeenMessages)
                     .toServer();
               }
               return packet;
@@ -78,7 +79,8 @@ public class SessionChatHandler implements ChatHandler<SessionPlayerChat> {
               logger.error("Exception while handling player chat for {}", player, ex);
               return null;
             }),
-        packet.getTimestamp()
+        packet.getTimestamp(),
+        packet.getLastSeenMessages()
     );
   }
 }
